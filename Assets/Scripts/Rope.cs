@@ -7,8 +7,8 @@ public class Rope : MonoBehaviour
 {
     public Rigidbody2D hook;
     public GameObject linkPrefab;
-	public LineRenderer lineRenderer;
-	public LineRenderer lineRenderer2;
+	public LineRenderer lineRenderer;					
+	public LineRenderer lineRenderer2;				// backup linerender when the rope got cut
 	public Candy candy;
 
     public int links = 7;
@@ -39,22 +39,22 @@ public class Rope : MonoBehaviour
 
 		for (int i = 0; i < links; i++)
 		{
-			GameObject link = Instantiate(linkPrefab, hook.transform);
-			HingeJoint2D joint = link.GetComponent<HingeJoint2D>();
-			segments.Add(link.transform);
-			joint.connectedBody = previousRb;
+			GameObject link = Instantiate(linkPrefab, hook.transform);					
+			HingeJoint2D joint = link.GetComponent<HingeJoint2D>();					
+			segments.Add(link.transform);										// save all the link
+			joint.connectedBody = previousRb;									// connect link to previous link (hook will be the first connection)
 			
-			if(i < links - 1)
+			if(i < links - 1)													// if not last link
 			{
-				previousRb = link.GetComponent<Rigidbody2D>();
+				previousRb = link.GetComponent<Rigidbody2D>();					// save this link as previous link
 			}
 			else
 			{
-				candy.ConnectRopEnd(link.GetComponent<Rigidbody2D>());
+				candy.ConnectRopEnd(link.GetComponent<Rigidbody2D>());			// pass the link to the candy and to connect (if it the last link)
 			}
 		}
 
-		cuttedSegments.AddRange(segments);
+		cuttedSegments.AddRange(segments);										// keep another list of all the links
 	}
 
 	private void DrawRope()
@@ -68,11 +68,11 @@ public class Rope : MonoBehaviour
 			}
 
 			lineRenderer.positionCount = segments.Count;
-			lineRenderer.SetPositions(segmentPositions);
+			lineRenderer.SetPositions(segmentPositions);						// get all the link pos and draw lines between them
 
 		}
 
-		if(cuttedSegments != null && gotCutted)
+		if(cuttedSegments != null && gotCutted)									// only draw this 2nd line when the rope got cut
 		{
 			
 			Vector3[] segmentPositions = new Vector3[cuttedSegments.Count];
@@ -93,14 +93,12 @@ public class Rope : MonoBehaviour
 			gotCutted = true;
 			lineRenderer2.gameObject.SetActive(true);
 
-			int index = segments.IndexOf(cuttedSegment);
-			int remainingIndex = segments.Count - index;
+			int index = segments.IndexOf(cuttedSegment);					// get the index of the link that got cut
+				
+			cuttedSegments.RemoveRange(0, index + 1);						// in the 2nd list remove links until the link that got cut (inlcuded) - use this to draw 2nd line
+			segments.RemoveRange(index, segments.Count - index);			// in the 1st list remove link got cut and the rest after - use this to draw 1st line
 
-			
-			cuttedSegments.RemoveRange(0, index + 1);
-			segments.RemoveRange(index, remainingIndex);
-
-			Destroy(cuttedSegment.gameObject);
+			Destroy(cuttedSegment.gameObject);								// destroy the link that got cut
 
 		}
 
